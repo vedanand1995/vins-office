@@ -137,7 +137,7 @@ class ExcelEditorActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnBold).setOnClickListener { toggleFontStyle { it.bold = !it.bold } }
         findViewById<Button>(R.id.btnItalic).setOnClickListener { toggleFontStyle { it.italic = !it.italic } }
         findViewById<Button>(R.id.btnUnderline).setOnClickListener { toggleFontStyle {
-            it.underline = (if (it.underline.toInt() == Font.U_SINGLE) Font.U_NONE else Font.U_SINGLE).toShort()
+            it.underline = if (it.underline == Font.U_SINGLE) Font.U_NONE else Font.U_SINGLE
         } }
         findViewById<Button>(R.id.btnTextColor).setOnClickListener { pickColor("Font Color") { argb ->
             styleSelectedCell { (font, _) -> font.setColor(poiIndex(argb)) }
@@ -184,8 +184,8 @@ class ExcelEditorActivity : AppCompatActivity() {
                         if (selCol <= last) sh.shiftColumns(selCol + 1, last, -1)
                         renderAll()
                     }
-                    4 -> styleSelectedCell { (font, _) -> font.fontHeightInPoints = (font.fontHeightInPoints + 2).coerceAtMost(72) }
-                    5 -> styleSelectedCell { (font, _) -> font.fontHeightInPoints = (font.fontHeightInPoints - 2).coerceAtLeast(6) }
+                    4 -> styleSelectedCell { (font, _) -> font.fontHeightInPoints = (font.fontHeightInPoints + 2).coerceAtMost(72).toShort() }
+                    5 -> styleSelectedCell { (font, _) -> font.fontHeightInPoints = (font.fontHeightInPoints - 2).coerceAtLeast(6).toShort() }
                     6 -> setAlignment(HorizontalAlignment.LEFT)
                     7 -> setAlignment(HorizontalAlignment.CENTER)
                     8 -> setAlignment(HorizontalAlignment.RIGHT)
@@ -221,7 +221,7 @@ class ExcelEditorActivity : AppCompatActivity() {
         val newFont = wb.createFont()
         newFont.bold = oldFont.bold
         newFont.italic = oldFont.italic
-        newFont.underline = oldFont.underline.toShort()
+        newFont.underline = oldFont.underline
         newFont.fontHeightInPoints = oldFont.fontHeightInPoints
         newFont.fontName = oldFont.fontName
         newFont.color = oldFont.color
