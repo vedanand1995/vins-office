@@ -2,9 +2,75 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="#FFFFFF">
 
-    <!-- Formula bar: cell ref + content -->
+    <!-- ===== Top bar: Done | save undo redo | zoom | close ===== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp"
+        android:background="#FFFFFF"
+        android:elevation="2dp">
+
+        <TextView
+            android:id="@+id/btnDone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Done"
+            android:textSize="16sp"
+            android:textColor="#1976D2"
+            android:padding="8dp" />
+
+        <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/btnSaveTop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💾"
+            android:textSize="18sp"
+            android:padding="10dp" />
+
+        <TextView
+            android:id="@+id/btnUndo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="↩️"
+            android:textSize="16sp"
+            android:padding="10dp" />
+
+        <TextView
+            android:id="@+id/btnRedo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="↪️"
+            android:textSize="16sp"
+            android:padding="10dp" />
+
+        <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/btnZoom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="100%"
+            android:textSize="14sp"
+            android:textColor="#1976D2"
+            android:padding="8dp" />
+
+        <TextView
+            android:id="@+id/btnClose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✕"
+            android:textSize="18sp"
+            android:padding="10dp" />
+    </LinearLayout>
+
+    <!-- Formula bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -28,64 +94,14 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="fx  =SUM(A1:A10)"
+            android:hint="fx"
             android:textSize="13sp"
             android:inputType="text"
             android:singleLine="true"
             android:background="@android:drawable/edit_text" />
     </LinearLayout>
 
-    <!-- Formatting toolbar -->
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="4dp">
-
-            <Button android:id="@+id/btnBold" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="B" android:textStyle="bold" />
-            <Button android:id="@+id/btnItalic" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="I" android:textStyle="italic" />
-            <Button android:id="@+id/btnUnderline" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="U" />
-            <Button android:id="@+id/btnFontPlus" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="A+" />
-            <Button android:id="@+id/btnFontMinus" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="A-" />
-            <Button android:id="@+id/btnAlignLeft" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="⬅" />
-            <Button android:id="@+id/btnAlignCenter" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="⬌" />
-            <Button android:id="@+id/btnAlignRight" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="➡" />
-            <Button android:id="@+id/btnFillColor" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="🎨" />
-            <Button android:id="@+id/btnTextColor" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="🅰" />
-            <Button android:id="@+id/btnInsertRow" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="+R" />
-            <Button android:id="@+id/btnDeleteRow" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="-R" />
-            <Button android:id="@+id/btnInsertCol" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="+C" />
-            <Button android:id="@+id/btnDeleteCol" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="44dp" android:text="-C" />
-        </LinearLayout>
-    </HorizontalScrollView>
-
-    <TextView
-        android:id="@+id/statusText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="4dp"
-        android:text="Loading..."
-        android:textSize="12sp" />
-
+    <!-- Grid -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -102,6 +118,53 @@
         </ScrollView>
     </HorizontalScrollView>
 
+    <!-- ===== Bottom formatting toolbar (WPS style) ===== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#FFFFFF"
+        android:elevation="4dp"
+        android:paddingHorizontal="4dp">
+
+        <Button android:id="@+id/btnBold" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:background="@android:color/transparent"
+            android:text="B" android:textStyle="bold" android:textSize="16sp" android:textColor="#333333" />
+
+        <Button android:id="@+id/btnItalic" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:background="@android:color/transparent"
+            android:text="I" android:textStyle="italic" android:textSize="16sp" android:textColor="#333333" />
+
+        <Button android:id="@+id/btnUnderline" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:background="@android:color/transparent"
+            android:text="U" android:textSize="16sp" android:textColor="#333333" />
+
+        <Button android:id="@+id/btnTextColor" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:background="@android:color/transparent"
+            android:text="A" android:textSize="16sp" android:textColor="#E53935" />
+
+        <Button android:id="@+id/btnFillColor" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:background="@android:color/transparent"
+            android:text="🖌" android:textSize="14sp" />
+
+        <Button android:id="@+id/btnClear" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:background="@android:color/transparent"
+            android:text="🧽" android:textSize="14sp" />
+
+        <Button android:id="@+id/btnMerge" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1.4" android:background="@android:color/transparent"
+            android:text="Merge" android:textSize="13sp" android:textColor="#333333" />
+
+        <Button android:id="@+id/btnWrap" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1.4" android:background="@android:color/transparent"
+            android:text="Wrap Text" android:textSize="13sp" android:textColor="#333333" />
+
+        <Button android:id="@+id/btnInsert" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:background="@android:color/transparent"
+            android:text="⋮" android:textSize="18sp" android:textColor="#333333" />
+    </LinearLayout>
+
     <!-- Sheet tabs -->
     <HorizontalScrollView
         android:layout_width="match_parent"
@@ -116,31 +179,4 @@
             android:orientation="horizontal"
             android:padding="4dp" />
     </HorizontalScrollView>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btnAddSheet"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="➕ Sheet" />
-
-        <Button
-            android:id="@+id/btnRenameSheet"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="✏️ Rename" />
-
-        <Button
-            android:id="@+id/btnSave"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="💾 Save" />
-    </LinearLayout>
 </LinearLayout>
