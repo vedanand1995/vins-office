@@ -79,13 +79,16 @@ class ExcelEditorActivity : AppCompatActivity() {
             } else false
         }
 
-        intent.getStringExtra("path")?.let {
-            file = File(it)
-            loadWorkbook(file!!)
-        } ?: run {
+        // Turant empty grid dikha do — white screen kabhi na aaye
+        if (workbook == null) {
             workbook = XSSFWorkbook()
             sheet = workbook!!.createSheet("Sheet1")
             renderAll()
+        }
+
+        intent.getStringExtra("path")?.let {
+            file = File(it)
+            loadWorkbook(file!!)
         }
     }
 
@@ -301,9 +304,12 @@ class ExcelEditorActivity : AppCompatActivity() {
             f.inputStream().use { workbook = WorkbookFactory.create(it) }
             sheet = workbook?.getSheetAt(0)
             withContext(Dispatchers.Main) { renderAll() }
-        } catch (e: Exception) {
+        } catch (t: Throwable) {
+            // NoClassDefFoundError jaise Errors bhi pakdo — POI Android pe heavy hai
             withContext(Dispatchers.Main) {
-                Toast.makeText(this@ExcelEditorActivity, "Load failed: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@ExcelEditorActivity,
+                    "Load failed: ${t.javaClass.simpleName}: ${t.message}", Toast.LENGTH_LONG).show()
+                android.util.Log.e("ExcelEditor", "load failed", t)
             }
         }
     }
