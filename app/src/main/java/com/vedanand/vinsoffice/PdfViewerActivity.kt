@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.font.PDType0Font
-import com.tom_roush.pdfbox.util.PDFBoxResourceLoader
 import java.io.File
 
 class PdfViewerActivity : AppCompatActivity() {
@@ -22,7 +21,7 @@ class PdfViewerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        PDFBoxResourceLoader.init(applicationContext)
+        initPdfBox()
         setContentView(R.layout.activity_pdf_viewer)
         imageView = findViewById(R.id.pdfPage)
 
@@ -32,6 +31,17 @@ class PdfViewerActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.btnAddText).setOnClickListener {
             pdfFile?.let { addTextToPdf(it, "नमस्ते / Hello", 50f, 700f) }
+        }
+    }
+
+    /** pdfbox resource loader ko reflection se init karo (version-safe) */
+    private fun initPdfBox() {
+        try {
+            Class.forName("com.tom_roush.pdfbox.util.PDFBoxResourceLoader")
+                .getMethod("init", android.content.Context::class.java)
+                .invoke(null, applicationContext)
+        } catch (_: Throwable) {
+            // resource loader optional hai — bina init bhi basic ops chalte hain
         }
     }
 

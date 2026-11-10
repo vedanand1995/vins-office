@@ -1,4 +1,4 @@
-package com.vedanand.vinsoffice
+successfully downloaded text file (SHA: db315c7bff403955be20ab2d2e4035c3458c62da)package com.vedanand.vinsoffice
 
 /**
  * Unicode Hindi ↔ Krutidev/LMG legacy encoding converter.
@@ -16,7 +16,7 @@ object KrutiDevConverter {
         "त" to "r", "थ" to "'k", "द" to "n", "ध" to "Ùk", "न" to "i",
         "प" to "Q", "फ" to "¶", "ब" to "c", "भ" to "H", "म" to "e",
         "य" to ";", "र" to "j", "ल" to "y", "व" to "o", "श" to "'k",
-        "ष" to ""k", "स" to "l", "ह" to "g", "क्ष" to "d", "त्र" to "ra",
+        "ष" to "\"k", "स" to "l", "ह" to "g", "क्ष" to "d", "त्र" to "ra",
         "ज्ञ" to "aa", "़" to "", "ा" to "k", "ि" to "f", "ी" to "F",
         "ु" to "q", "ू" to "w", "ृ" to "ª", "े" to "`", "ै" to "ks",
         "ो" to "ksa", "ौ" to "kSa", "ं" to "a", "ँ" to "aa", "्" to "",
