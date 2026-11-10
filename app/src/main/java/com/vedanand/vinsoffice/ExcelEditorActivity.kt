@@ -5,9 +5,8 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
-import android.view.View
-import android.widget.Button
 import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TableLayout
@@ -40,6 +39,7 @@ class ExcelEditorActivity : AppCompatActivity() {
     private lateinit var formulaBar: EditText
     private lateinit var sheetTabs: LinearLayout
     private lateinit var zoomLabel: TextView
+    private lateinit var statusText: TextView
 
     private var workbook: Workbook? = null
     private var sheet: Sheet? = null
@@ -51,8 +51,6 @@ class ExcelEditorActivity : AppCompatActivity() {
     private var baseTextSize = 13f
 
     private val cellViews = mutableMapOf<String, EditText>()
-
-    // Undo/Redo stacks: (row, col, previousValue)
     private val undoStack = ArrayDeque<Triple<Int, Int, String>>()
     private val redoStack = ArrayDeque<Triple<Int, Int, String>>()
 
@@ -67,29 +65,36 @@ class ExcelEditorActivity : AppCompatActivity() {
         formulaBar = findViewById(R.id.formulaBar)
         sheetTabs = findViewById(R.id.sheetTabs)
         zoomLabel = findViewById(R.id.btnZoom)
+        statusText = findViewById(R.id.statusText)
 
-        setupTopBar()
-        setupToolbar()
+        try {
+            setupTopBar()
+            setupToolbar()
 
-        formulaBar.setOnEditorActionListener { _, action, _ ->
-            if (action == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
-                pushUndo(selRow, selCol)
-                applyFormulaBar()
-                true
-            } else false
-        }
+            formulaBar.setOnEditorActionListener { _, action, _ ->
+                if (action == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+                    pushUndo(selRow, selCol)
+                    applyFormulaBar()
+                    true
+                } else false
+            }
 
-        // Turant empty grid dikha do — white screen kabhi na aaye
-        if (workbook == null) {
+            // Turant empty grid — white screen kabhi na aaye
             workbook = XSSFWorkbook()
             sheet = workbook!!.createSheet("Sheet1")
             renderAll()
-        }
 
-        intent.getStringExtra("path")?.let {
-            file = File(it)
-            loadWorkbook(file!!)
+            intent.getStringExtra("path")?.let {
+                file = File(it)
+                loadWorkbook(file!!)
+            }
+        } catch (t: Throwable) {
+            statusText.text = "Init error: ${t.javaClass.simpleName}: ${t.message}"
         }
+    }
+
+    private fun setStatus(msg: String) {
+        runOnUiThread { statusText.text = msg }
     }
 
     // ---------- Top bar ----------
@@ -122,9 +127,9 @@ class ExcelEditorActivity : AppCompatActivity() {
 
     private fun redo() {
         val last = redoStack.removeLastOrNull() ?: return
-        val (r, c, val_) = last
+        val (r, c, v) = last
         undoStack.addLast(Triple(r, c, cellText(getCell(r, c))))
-        setCell(r, c, val_)
+        setCell(r, c, v)
         refreshCellView(r, c)
     }
 
@@ -137,63 +142,69 @@ class ExcelEditorActivity : AppCompatActivity() {
     // ---------- Bottom toolbar ----------
 
     private fun setupToolbar() {
-        findViewById<Button>(R.id.btnBold).setOnClickListener { toggleFontStyle { it.bold = !it.bold } }
-        findViewById<Button>(R.id.btnItalic).setOnClickListener { toggleFontStyle { it.italic = !it.italic } }
-        findViewById<Button>(R.id.btnUnderline).setOnClickListener { toggleFontStyle {
+        fun t(id: String) = findViewById<TextView>(resources.getIdentifier(id, "id", packageName))
+        t("btnBold").setOnClickListener { toggleFontStyle { it.bold = !it.bold } }
+        t("btnItalic").setOnClickListener { toggleFontStyle { it.italic = !it.italic } }
+        t("btnUnderline").setOnClickListener { toggleFontStyle {
             it.underline = if (it.underline == Font.U_SINGLE) Font.U_NONE else Font.U_SINGLE
         } }
-        findViewById<Button>(R.id.btnTextColor).setOnClickListener { pickColor("Font Color") { argb ->
-            styleSelectedCell { (font, _) -> font.setColor(poiIndex(argb)) }
+        t("btnTextColor").setOnClickListener { pickColor("Font Color") { argb ->
+            styleSelectedCell { (font, _) -> font.color = rgbToPoi(argb) }
         } }
-        findViewById<Button>(R.id.btnFillColor).setOnClickListener { pickColor("Fill Color") { argb ->
+        t("btnFillColor").setOnClickListener { pickColor("Fill Color") { argb ->
             styleSelectedCell { (_, style) ->
                 style.fillPattern = FillPatternType.SOLID_FOREGROUND
-                style.fillForegroundColor = poiIndex(argb)
+                style.fillForegroundColor = rgbToPoi(argb)
             }
         } }
-        findViewById<Button>(R.id.btnClear).setOnClickListener {
+        t("btnClear").setOnClickListener {
             pushUndo(selRow, selCol)
             val cell = getCell(selRow, selCol)
             cell.cellType = CellType.BLANK
             refreshCellView(selRow, selCol)
         }
-        findViewById<Button>(R.id.btnMerge).setOnClickListener { mergeSelected() }
-        findViewById<Button>(R.id.btnWrap).setOnClickListener {
+        t("btnMerge").setOnClickListener { mergeSelected() }
+        t("btnWrap").setOnClickListener {
             styleSelectedCell { (_, style) -> style.wrapText = !style.wrapText }
         }
-        findViewById<Button>(R.id.btnInsert).setOnClickListener { showInsertMenu() }
+        t("btnInsertRow").setOnClickListener { pushUndoAll(); sheet?.shiftRows(selRow, sheet!!.lastRowNum, 1); renderAll() }
+        t("btnDeleteRow").setOnClickListener { deleteRow() }
+        t("btnInsertCol").setOnClickListener { sheet?.shiftColumns(selCol, (sheet!!.getRow(0)?.lastCellNum?.toInt() ?: cols), 1); renderAll() }
+        t("btnDeleteCol").setOnClickListener { deleteCol() }
+        t("btnMore").setOnClickListener { showInsertMenu() }
+    }
+
+    private fun pushUndoAll() { /* row/col ops undo-simple: skip */ }
+
+    private fun deleteRow() {
+        val sh = sheet ?: return
+        if (selRow <= sh.lastRowNum) {
+            sh.removeRow(sh.getRow(selRow))
+            if (selRow + 1 <= sh.lastRowNum) sh.shiftRows(selRow + 1, sh.lastRowNum, -1)
+        }
+        renderAll()
+    }
+
+    private fun deleteCol() {
+        val sh = sheet ?: return
+        val last = (sh.getRow(0)?.lastCellNum?.toInt() ?: 0) - 1
+        if (selCol <= last) sh.shiftColumns(selCol + 1, last, -1)
+        renderAll()
     }
 
     private fun showInsertMenu() {
-        val options = arrayOf("➕ Insert Row", "➖ Delete Row", "➕ Insert Column", "➖ Delete Column",
-            "🅰 Font Size +", "🅰 Font Size -", "⬅ Align Left", "⬌ Align Center", "➡ Align Right",
+        val options = arrayOf("🅰 Font Size +", "🅰 Font Size -", "⬅ Align Left", "⬌ Align Center", "➡ Align Right",
             "📄 Add Sheet", "✏️ Rename Sheet")
-        AlertDialog.Builder(this).setTitle("Insert / Actions")
+        AlertDialog.Builder(this).setTitle("More Actions")
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> { sheet?.shiftRows(selRow, sheet!!.lastRowNum, 1); renderAll() }
-                    1 -> {
-                        val sh = sheet ?: return@setItems
-                        if (selRow <= sh.lastRowNum) {
-                            sh.removeRow(sh.getRow(selRow))
-                            if (selRow + 1 <= sh.lastRowNum) sh.shiftRows(selRow + 1, sh.lastRowNum, -1)
-                        }
-                        renderAll()
-                    }
-                    2 -> { sheet?.shiftColumns(selCol, (sheet!!.getRow(0)?.lastCellNum?.toInt() ?: cols), 1); renderAll() }
-                    3 -> {
-                        val sh = sheet ?: return@setItems
-                        val last = (sh.getRow(0)?.lastCellNum?.toInt() ?: 0) - 1
-                        if (selCol <= last) sh.shiftColumns(selCol + 1, last, -1)
-                        renderAll()
-                    }
-                    4 -> styleSelectedCell { (font, _) -> font.fontHeightInPoints = (font.fontHeightInPoints + 2).coerceAtMost(72).toShort() }
-                    5 -> styleSelectedCell { (font, _) -> font.fontHeightInPoints = (font.fontHeightInPoints - 2).coerceAtLeast(6).toShort() }
-                    6 -> setAlignment(HorizontalAlignment.LEFT)
-                    7 -> setAlignment(HorizontalAlignment.CENTER)
-                    8 -> setAlignment(HorizontalAlignment.RIGHT)
-                    9 -> addSheet()
-                    10 -> renameSheet()
+                    0 -> styleSelectedCell { (font, _) -> font.fontHeightInPoints = (font.fontHeightInPoints + 2).coerceAtMost(72).toShort() }
+                    1 -> styleSelectedCell { (font, _) -> font.fontHeightInPoints = (font.fontHeightInPoints - 2).coerceAtLeast(6).toShort() }
+                    2 -> setAlignment(HorizontalAlignment.LEFT)
+                    3 -> setAlignment(HorizontalAlignment.CENTER)
+                    4 -> setAlignment(HorizontalAlignment.RIGHT)
+                    5 -> addSheet()
+                    6 -> renameSheet()
                 }
             }.show()
     }
@@ -207,11 +218,27 @@ class ExcelEditorActivity : AppCompatActivity() {
             .setItems(names) { _, which -> apply(colors[which]) }.show()
     }
 
-    /** POI XSSF color: nearest indexed color via XSSFCellStyle default — use rgb directly on view, indexed on model */
-    private fun poiIndex(argb: Int): Short {
+    /** XSSF extended color set karna — indexed color se approximate */
+    private fun rgbToPoi(argb: Int): Short {
         val rgb = argb and 0xFFFFFF
-        // XSSF supports extended colors through createCellStyle; indexed fallback:
-        return (rgb and 0xFFFF).toShort()
+        val nearest = mapOf(
+            0x000000 to 0, 0xFFFFFF to 1, 0xFF0000 to 10, 0x00FF00 to 11,
+            0x0000FF to 12, 0xFFFF00 to 13, 0xFF00FF to 14, 0x00FFFF to 15,
+            0xE53935 to 10, 0x1E88E5 to 12, 0x43A047 to 11, 0xFDD835 to 13, 0xFB8C00 to 13
+        )
+        var best = 0; var bestDist = Int.MAX_VALUE
+        for ((k, v) in nearest) {
+            val d = colorDist(rgb, k)
+            if (d < bestDist) { bestDist = d; best = v }
+        }
+        return best.toShort()
+    }
+
+    private fun colorDist(a: Int, b: Int): Int {
+        val r = ((a shr 16) and 0xFF) - ((b shr 16) and 0xFF)
+        val g = ((a shr 8) and 0xFF) - ((b shr 8) and 0xFF)
+        val bl = (a and 0xFF) - (b and 0xFF)
+        return r * r + g * g + bl * bl
     }
 
     // ---------- Styles ----------
@@ -246,7 +273,7 @@ class ExcelEditorActivity : AppCompatActivity() {
         try {
             sh.addMergedRegion(CellRangeAddress(selRow, selRow, selCol, selCol + 1))
             renderGrid()
-            Toast.makeText(this, "Merged ${cellName(selCol)}${selRow + 1}:${cellName(selCol + 1)}${selRow + 1}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Merged", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Merge failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
@@ -276,16 +303,14 @@ class ExcelEditorActivity : AppCompatActivity() {
         sheetTabs.removeAllViews()
         val wb = workbook ?: return
         for (i in 0 until wb.numberOfSheets) {
-            val b = Button(this)
+            val b = TextView(this)
             b.text = wb.getSheetName(i)
             b.textSize = 12f
-            b.isAllCaps = false
-            b.setPadding(16, 4, 16, 4)
+            b.setPadding(20, 8, 20, 8)
             if (i == currentSheetIndex) {
                 b.background = GradientDrawable().apply { setColor(Color.parseColor("#1976D2")); cornerRadius = 12f }
                 b.setTextColor(Color.WHITE)
             } else {
-                b.background = GradientDrawable().apply { setColor(Color.TRANSPARENT); cornerRadius = 12f }
                 b.setTextColor(Color.parseColor("#37474F"))
             }
             b.setOnClickListener {
@@ -301,15 +326,19 @@ class ExcelEditorActivity : AppCompatActivity() {
 
     private fun loadWorkbook(f: File) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            f.inputStream().use { workbook = WorkbookFactory.create(it) }
-            sheet = workbook?.getSheetAt(0)
-            withContext(Dispatchers.Main) { renderAll() }
-        } catch (t: Throwable) {
-            // NoClassDefFoundError jaise Errors bhi pakdo — POI Android pe heavy hai
+            setStatus("Loading ${f.name}...")
+            val wb = f.inputStream().use { WorkbookFactory.create(it) }
+            workbook = wb
+            sheet = wb.getSheetAt(0)
             withContext(Dispatchers.Main) {
+                renderAll()
+                setStatus("✅ ${f.name} — ${sheet?.physicalNumberOfRows ?: 0} rows loaded")
+            }
+        } catch (t: Throwable) {
+            withContext(Dispatchers.Main) {
+                setStatus("❌ Load error: ${t.javaClass.simpleName}: ${t.message}")
                 Toast.makeText(this@ExcelEditorActivity,
-                    "Load failed: ${t.javaClass.simpleName}: ${t.message}", Toast.LENGTH_LONG).show()
-                android.util.Log.e("ExcelEditor", "load failed", t)
+                    "Load failed: ${t.javaClass.simpleName}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -322,9 +351,9 @@ class ExcelEditorActivity : AppCompatActivity() {
             withContext(Dispatchers.Main) {
                 Toast.makeText(this@ExcelEditorActivity, "Saved ✅", Toast.LENGTH_SHORT).show()
             }
-        } catch (e: Exception) {
+        } catch (t: Throwable) {
             withContext(Dispatchers.Main) {
-                Toast.makeText(this@ExcelEditorActivity, "Save failed: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@ExcelEditorActivity, "Save failed: ${t.javaClass.simpleName}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -332,8 +361,13 @@ class ExcelEditorActivity : AppCompatActivity() {
     // ---------- Grid ----------
 
     private fun renderAll() {
-        renderSheetTabs()
-        renderGrid()
+        try {
+            renderSheetTabs()
+            renderGrid()
+            setStatus("Grid rendered: ${rows} rows × ${cols} cols")
+        } catch (t: Throwable) {
+            setStatus("❌ Render error: ${t.javaClass.simpleName}: ${t.message}")
+        }
     }
 
     private fun renderGrid() {
@@ -376,7 +410,6 @@ class ExcelEditorActivity : AppCompatActivity() {
                 et.setOnClickListener {
                     selRow = r; selCol = c
                     updateFormulaBar(r, c)
-                    // selection highlight
                     for ((_, v) in cellViews) v.background = borderedBg(Color.WHITE)
                     et.background = borderedBg(Color.parseColor("#BBDEFB"))
                 }
@@ -389,7 +422,7 @@ class ExcelEditorActivity : AppCompatActivity() {
 
     private fun borderedBg(fill: Int): GradientDrawable = GradientDrawable().apply {
         setColor(fill)
-        setStroke(1, Color.parseColor("#BDBDBD"))
+        setStroke(px(1), Color.parseColor("#C9C9C9"))
     }
 
     private fun applyCellStyleToView(et: EditText, cell: Cell?) {
@@ -407,21 +440,17 @@ class ExcelEditorActivity : AppCompatActivity() {
             else if (style.alignment == HorizontalAlignment.RIGHT) et.gravity = Gravity.END
             else et.gravity = Gravity.START or Gravity.CENTER_VERTICAL
 
-            // Fill color (XSSF RGB preferred, indexed fallback)
             var fill = Color.WHITE
             if (style.fillPattern == FillPatternType.SOLID_FOREGROUND) {
                 fill = xssfRgb(style.fillForegroundColorColor)
                     ?: indexedToArgb(style.fillForegroundColor)
             }
 
-            // Border: file me border ho to dark stroke, warna halka gridline
             val hasBorder = style.borderTop != org.apache.poi.ss.usermodel.BorderStyle.NONE ||
                 style.borderBottom != org.apache.poi.ss.usermodel.BorderStyle.NONE ||
                 style.borderLeft != org.apache.poi.ss.usermodel.BorderStyle.NONE ||
                 style.borderRight != org.apache.poi.ss.usermodel.BorderStyle.NONE
-            val borderColor = if (hasBorder) {
-                xssfRgb(style.topForegroundColorColor) ?: Color.parseColor("#555555")
-            } else Color.parseColor("#C9C9C9")
+            val borderColor = if (hasBorder) Color.parseColor("#555555") else Color.parseColor("#C9C9C9")
             val strokeW = if (hasBorder) 2 else 1
 
             et.background = GradientDrawable().apply {
@@ -431,7 +460,6 @@ class ExcelEditorActivity : AppCompatActivity() {
         } catch (_: Exception) {}
     }
 
-    /** XSSFColor -> ARGB int, null agar available nahi */
     private fun xssfRgb(color: Any?): Int? = try {
         val c = color as? org.apache.poi.xssf.usermodel.XSSFColor ?: return null
         val rgb = c.rgbWithAlpha ?: c.rgb ?: return null
@@ -440,26 +468,22 @@ class ExcelEditorActivity : AppCompatActivity() {
         else null
     } catch (_: Exception) { null }
 
-    /** POI indexed color -> ARGB (common palette) */
     private fun indexedToArgb(idx: Short): Int {
         val i = idx.toInt()
         val palette = mapOf(
             0 to 0xFF000000.toInt(), 1 to 0xFFFFFFFF.toInt(), 2 to 0xFFFF0000.toInt(),
             3 to 0xFF00FF00.toInt(), 4 to 0xFF0000FF.toInt(), 5 to 0xFFFFFF00.toInt(),
-            6 to 0xFFFF00FF.toInt(), 7 to 0xFF00FFFF.toInt(), 8 to 0xFF000000.toInt(),
-            9 to 0xFFFFFFFF.toInt(), 10 to 0xFFFF0000.toInt(), 11 to 0xFF00FF00.toInt(),
-            12 to 0xFF0000FF.toInt(), 13 to 0xFFFFFF00.toInt(), 14 to 0xFFFF00FF.toInt(),
-            15 to 0xFF00FFFF.toInt(), 16 to 0xFF800000.toInt(), 17 to 0xFF008000.toInt(),
-            18 to 0xFF000080.toInt(), 19 to 0xFF808000.toInt(), 20 to 0xFF800080.toInt(),
-            21 to 0xFF008080.toInt(), 22 to 0xFFC0C0C0.toInt(), 23 to 0xFF808080.toInt(),
-            24 to 0xFF9999FF.toInt(), 40 to 0xFFCCFFFF.toInt(), 41 to 0xFFCCFFCC.toInt(),
-            42 to 0xFFFFFF99.toInt(), 43 to 0xFFFFCC99.toInt(), 44 to 0xFFCC99FF.toInt(),
-            45 to 0xFFFF99CC.toInt(), 46 to 0xFF99CCFF.toInt(), 47 to 0xFFFFCCFF.toInt()
+            6 to 0xFFFF00FF.toInt(), 7 to 0xFF00FFFF.toInt(), 16 to 0xFF800000.toInt(),
+            17 to 0xFF008000.toInt(), 18 to 0xFF000080.toInt(), 19 to 0xFF808000.toInt(),
+            20 to 0xFF800080.toInt(), 21 to 0xFF008080.toInt(), 22 to 0xFFC0C0C0.toInt(),
+            23 to 0xFF808080.toInt(), 24 to 0xFF9999FF.toInt(), 40 to 0xFFCCFFFF.toInt(),
+            41 to 0xFFCCFFCC.toInt(), 42 to 0xFFFFFF99.toInt(), 43 to 0xFFFFCC99.toInt(),
+            44 to 0xFFCC99FF.toInt(), 45 to 0xFFFF99CC.toInt(), 46 to 0xFF99CCFF.toInt(),
+            47 to 0xFFFFCCFF.toInt()
         )
-        return palette[i] ?: (0xFF000000.toInt() or ((i * 7919) and 0xFFFFFF))
+        return palette[i] ?: Color.WHITE
     }
 
-    /** Font color: XSSF RGB first, indexed fallback */
     private fun fontColorArgb(font: Font): Int = try {
         xssfRgb((font as? org.apache.poi.xssf.usermodel.XSSFFont)?.xssfColor)
             ?: indexedToArgb(font.color)
@@ -502,11 +526,9 @@ class ExcelEditorActivity : AppCompatActivity() {
         tv.setTypeface(null, Typeface.BOLD)
         tv.setPadding(16, 10, 16, 10)
         tv.gravity = Gravity.CENTER
-        tv.minWidth = px(40)
+        tv.minWidth = px(44)
         tv.setTextColor(Color.WHITE)
-        tv.background = GradientDrawable().apply {
-            setColor(Color.parseColor("#1976D2")); cornerRadius = 0f
-        }
+        tv.background = GradientDrawable().apply { setColor(Color.parseColor("#1976D2")) }
         return tv
     }
 

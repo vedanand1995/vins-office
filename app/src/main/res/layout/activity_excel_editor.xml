@@ -5,69 +5,44 @@
     android:orientation="vertical"
     android:background="#FFFFFF">
 
-    <!-- ===== Top bar: Done | save undo redo | zoom | close ===== -->
+    <!-- Top bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingHorizontal="8dp"
+        android:paddingHorizontal="12dp"
         android:background="#FFFFFF"
         android:elevation="2dp">
 
-        <TextView
-            android:id="@+id/btnDone"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Done"
-            android:textSize="16sp"
-            android:textColor="#1976D2"
+        <TextView android:id="@+id/btnDone"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Done" android:textSize="16sp" android:textColor="#1976D2"
             android:padding="8dp" />
 
         <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
 
-        <TextView
-            android:id="@+id/btnSaveTop"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="💾"
-            android:textSize="18sp"
-            android:padding="10dp" />
+        <TextView android:id="@+id/btnSaveTop"
+            android:layout_width="40dp" android:layout_height="40dp"
+            android:gravity="center" android:text="💾" android:textSize="18sp" />
 
-        <TextView
-            android:id="@+id/btnUndo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="↩️"
-            android:textSize="16sp"
-            android:padding="10dp" />
+        <TextView android:id="@+id/btnUndo"
+            android:layout_width="40dp" android:layout_height="40dp"
+            android:gravity="center" android:text="↩" android:textSize="18sp" android:textColor="#333333" />
 
-        <TextView
-            android:id="@+id/btnRedo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="↪️"
-            android:textSize="16sp"
-            android:padding="10dp" />
+        <TextView android:id="@+id/btnRedo"
+            android:layout_width="40dp" android:layout_height="40dp"
+            android:gravity="center" android:text="↪" android:textSize="18sp" android:textColor="#333333" />
 
         <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
 
-        <TextView
-            android:id="@+id/btnZoom"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="100%"
-            android:textSize="14sp"
-            android:textColor="#1976D2"
-            android:padding="8dp" />
+        <TextView android:id="@+id/btnZoom"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="100%" android:textSize="14sp" android:textColor="#1976D2" android:padding="8dp" />
 
-        <TextView
-            android:id="@+id/btnClose"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="✕"
-            android:textSize="18sp"
-            android:padding="10dp" />
+        <TextView android:id="@+id/btnClose"
+            android:layout_width="40dp" android:layout_height="40dp"
+            android:gravity="center" android:text="✕" android:textSize="16sp" android:textColor="#333333" />
     </LinearLayout>
 
     <!-- Formula bar -->
@@ -76,30 +51,26 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="#F5F5F5"
-        android:padding="4dp"
+        android:padding="6dp"
         android:gravity="center_vertical">
 
-        <TextView
-            android:id="@+id/cellRef"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="48dp"
-            android:text="A1"
-            android:textStyle="bold"
-            android:textSize="13sp"
-            android:padding="6dp" />
+        <TextView android:id="@+id/cellRef"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:minWidth="52dp" android:text="A1" android:textStyle="bold"
+            android:textSize="14sp" android:padding="6dp" />
 
-        <EditText
-            android:id="@+id/formulaBar"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="fx"
-            android:textSize="13sp"
-            android:inputType="text"
-            android:singleLine="true"
+        <EditText android:id="@+id/formulaBar"
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:hint="fx" android:textSize="14sp"
+            android:inputType="text" android:singleLine="true"
             android:background="@android:drawable/edit_text" />
     </LinearLayout>
+
+    <!-- Status / diagnostics -->
+    <TextView android:id="@+id/statusText"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:paddingHorizontal="8dp" android:paddingVertical="2dp"
+        android:text="Starting..." android:textSize="11sp" android:textColor="#777777" />
 
     <!-- Grid -->
     <HorizontalScrollView
@@ -109,7 +80,8 @@
 
         <ScrollView
             android:layout_width="wrap_content"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:fillViewport="true">
 
             <TableLayout
                 android:id="@+id/grid"
@@ -118,52 +90,36 @@
         </ScrollView>
     </HorizontalScrollView>
 
-    <!-- ===== Bottom formatting toolbar (WPS style) ===== -->
-    <LinearLayout
+    <!-- Bottom toolbar (scrollable) -->
+    <HorizontalScrollView
         android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:layout_height="56dp"
+        android:scrollbars="none"
         android:background="#FFFFFF"
-        android:elevation="4dp"
-        android:paddingHorizontal="4dp">
+        android:elevation="4dp">
 
-        <Button android:id="@+id/btnBold" android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1" android:background="@android:color/transparent"
-            android:text="B" android:textStyle="bold" android:textSize="16sp" android:textColor="#333333" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="8dp">
 
-        <Button android:id="@+id/btnItalic" android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1" android:background="@android:color/transparent"
-            android:text="I" android:textStyle="italic" android:textSize="16sp" android:textColor="#333333" />
-
-        <Button android:id="@+id/btnUnderline" android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1" android:background="@android:color/transparent"
-            android:text="U" android:textSize="16sp" android:textColor="#333333" />
-
-        <Button android:id="@+id/btnTextColor" android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1" android:background="@android:color/transparent"
-            android:text="A" android:textSize="16sp" android:textColor="#E53935" />
-
-        <Button android:id="@+id/btnFillColor" android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1" android:background="@android:color/transparent"
-            android:text="🖌" android:textSize="14sp" />
-
-        <Button android:id="@+id/btnClear" android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1" android:background="@android:color/transparent"
-            android:text="🧽" android:textSize="14sp" />
-
-        <Button android:id="@+id/btnMerge" android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1.4" android:background="@android:color/transparent"
-            android:text="Merge" android:textSize="13sp" android:textColor="#333333" />
-
-        <Button android:id="@+id/btnWrap" android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1.4" android:background="@android:color/transparent"
-            android:text="Wrap Text" android:textSize="13sp" android:textColor="#333333" />
-
-        <Button android:id="@+id/btnInsert" android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1" android:background="@android:color/transparent"
-            android:text="⋮" android:textSize="18sp" android:textColor="#333333" />
-    </LinearLayout>
+            <TextView android:id="@+id/btnBold" style="@style/ExcelToolItem" android:text="B" android:textStyle="bold" />
+            <TextView android:id="@+id/btnItalic" style="@style/ExcelToolItem" android:text="I" android:textStyle="italic" />
+            <TextView android:id="@+id/btnUnderline" style="@style/ExcelToolItem" android:text="U" />
+            <TextView android:id="@+id/btnTextColor" style="@style/ExcelToolItem" android:text="A" android:textColor="#E53935" android:textStyle="bold" />
+            <TextView android:id="@+id/btnFillColor" style="@style/ExcelToolItem" android:text="🖌" />
+            <TextView android:id="@+id/btnClear" style="@style/ExcelToolItem" android:text="🧽" />
+            <TextView android:id="@+id/btnMerge" style="@style/ExcelToolItemWide" android:text="Merge" />
+            <TextView android:id="@+id/btnWrap" style="@style/ExcelToolItemWide" android:text="Wrap" />
+            <TextView android:id="@+id/btnInsertRow" style="@style/ExcelToolItem" android:text="+R" android:textColor="#1976D2" android:textStyle="bold" />
+            <TextView android:id="@+id/btnDeleteRow" style="@style/ExcelToolItem" android:text="−R" android:textColor="#E53935" android:textStyle="bold" />
+            <TextView android:id="@+id/btnInsertCol" style="@style/ExcelToolItem" android:text="+C" android:textColor="#1976D2" android:textStyle="bold" />
+            <TextView android:id="@+id/btnDeleteCol" style="@style/ExcelToolItem" android:text="−C" android:textColor="#E53935" android:textStyle="bold" />
+            <TextView android:id="@+id/btnMore" style="@style/ExcelToolItem" android:text="⋮" android:textSize="20sp" />
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <!-- Sheet tabs -->
     <HorizontalScrollView
@@ -172,11 +128,8 @@
         android:scrollbars="none"
         android:background="#ECEFF1">
 
-        <LinearLayout
-            android:id="@+id/sheetTabs"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="4dp" />
+        <LinearLayout android:id="@+id/sheetTabs"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:padding="4dp" />
     </HorizontalScrollView>
 </LinearLayout>
