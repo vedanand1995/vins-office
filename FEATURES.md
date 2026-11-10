@@ -35,9 +35,9 @@ Microsoft Excel (Desktop + Web + Android) ke saare functions/features ki complet
 **Supported formats:** XLS ⬜ | XLSX ✅ | XLSM ⬜ | XLSB ⬜ | CSV ⬜ | TXT ⬜ | ODS ⬜ | XML ⬜ | PDF Export ⬜
 
 ## 2. Worksheet Management
-- [ ] Add Sheet
+- [x] Add Sheet
 - [ ] Delete Sheet
-- [ ] Rename Sheet
+- [x] Rename Sheet
 - [ ] Duplicate Sheet
 - [ ] Copy Sheet
 - [ ] Move Sheet
@@ -67,10 +67,10 @@ Microsoft Excel (Desktop + Web + Android) ke saare functions/features ki complet
 - [ ] Select Entire Sheet
 - [ ] Insert Cell
 - [ ] Delete Cell
-- [ ] Insert Row
-- [ ] Delete Row
-- [ ] Insert Column
-- [ ] Delete Column
+- [x] Insert Row
+- [x] Delete Row
+- [x] Insert Column
+- [x] Delete Column
 - [ ] Copy
 - [ ] Cut
 - [ ] Paste
@@ -102,15 +102,15 @@ Microsoft Excel (Desktop + Web + Android) ke saare functions/features ki complet
 - [ ] Remove Hyperlink
 
 ## 4. Text & Number Formatting
-- [ ] Font Family
-- [ ] Font Size
-- [ ] Bold
-- [ ] Italic
-- [ ] Underline
+- [x] Font Family
+- [x] Font Size
+- [x] Bold
+- [x] Italic
+- [x] Underline
 - [ ] Double Underline
 - [ ] Strikethrough
-- [ ] Font Color
-- [ ] Cell Fill Color
+- [x] Font Color
+- [x] Cell Fill Color
 - [ ] Background Color
 - [ ] Border Color
 - [ ] Border Style
@@ -121,11 +121,11 @@ Microsoft Excel (Desktop + Web + Android) ke saare functions/features ki complet
 - [ ] Bottom Border
 - [ ] Left Border
 - [ ] Right Border
-- [ ] Horizontal Alignment
+- [x] Horizontal Alignment
 - [ ] Vertical Alignment
-- [ ] Left Align
-- [ ] Center Align
-- [ ] Right Align
+- [x] Left Align
+- [x] Center Align
+- [x] Right Align
 - [ ] Top Align
 - [ ] Middle Align
 - [ ] Bottom Align
@@ -371,7 +371,7 @@ Microsoft Excel (Desktop + Web + Android) ke saare functions/features ki complet
 - [ ] Split Window
 - [ ] New Window / Arrange All / Switch Windows
 - [ ] Full Screen
-- [ ] Formula Bar
+- [x] Formula Bar
 - [ ] Gridlines / Headings toggle
 - [ ] Navigation Pane
 - [ ] Search Box / Name Box
@@ -439,12 +439,12 @@ Microsoft Excel (Desktop + Web + Android) ke saare functions/features ki complet
 ## 18. Android Mobile-Specific
 - [x] Touch-based Cell Selection
 - [ ] Long Press Menu
-- [ ] Mobile Formula Bar
+- [x] Mobile Formula Bar
 - [ ] Custom Mobile Keyboard
 - [ ] Formula Suggestions
 - [ ] Touch Drag & Drop
 - [ ] Row/Column Resize by Touch
-- [ ] Sheet Switching
+- [x] Sheet Switching
 - [ ] Pinch to Zoom
 - [ ] Mobile Ribbon
 - [ ] Floating Formatting Toolbar
@@ -472,9 +472,9 @@ Microsoft Excel (Desktop + Web + Android) ke saare functions/features ki complet
 - [x] Row Number Display / Column Letters
 - [ ] CSV File Open
 - [ ] Workbook Preview
-- [ ] Sheet Switching
-- [ ] Formula Bar
-- [ ] Gridlines
+- [x] Sheet Switching
+- [x] Formula Bar
+- [x] Gridlines
 - [ ] Zoom In/Out
 - [ ] Freeze Panes
 - [ ] Hidden Rows/Columns Handling
@@ -504,7 +504,7 @@ Microsoft Excel (Desktop + Web + Android) ke saare functions/features ki complet
 - [ ] Undo / Redo
 - [ ] Format Cells
 - [ ] Font / Font Size / Bold / Italic / Underline
-- [ ] Font Color / Cell Color
+- [x] Font Color / Cell Color
 - [ ] Borders
 - [ ] Merge Cells
 - [ ] Wrap Text
