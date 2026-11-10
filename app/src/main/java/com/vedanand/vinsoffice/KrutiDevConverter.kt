@@ -1,4 +1,4 @@
-successfully downloaded text file (SHA: db315c7bff403955be20ab2d2e4035c3458c62da)package com.vedanand.vinsoffice
+package com.vedanand.vinsoffice
 
 /**
  * Unicode Hindi ↔ Krutidev/LMG legacy encoding converter.
@@ -25,7 +25,7 @@ object KrutiDevConverter {
         "।" to "A"
     )
 
-    // Krutidev → Unicode (reverse)
+    // Krutidev → Unicode (reverse, longest match first)
     private val krutiToUnicode: Map<String, String> by lazy {
         unicodeToKruti.entries
             .sortedByDescending { it.value.length }
@@ -43,14 +43,19 @@ object KrutiDevConverter {
             for (len in 3 downTo 1) {
                 if (i + len <= text.length) {
                     val sub = text.substring(i, i + len)
-                    krutiToUnicode[sub]?.let {
-                        sb.append(it); i += len; matched = true
-                        return@let
+                    val u = krutiToUnicode[sub]
+                    if (u != null) {
+                        sb.append(u)
+                        i += len
+                        matched = true
+                        break
                     }
                 }
-                if (matched) break
             }
-            if (!matched) { sb.append(text[i]); i++ }
+            if (!matched) {
+                sb.append(text[i])
+                i++
+            }
         }
         return sb.toString()
     }
