@@ -137,8 +137,8 @@ class WordEditorActivity : AppCompatActivity() {
 
         t("btnBold").setOnClickListener { toggleSpan(selectionFlags(), create = { StyleSpan(Typeface.BOLD) }, has = { s -> hasStyle(s, Typeface.BOLD) }) }
         t("btnItalic").setOnClickListener { toggleSpan(selectionFlags(), create = { StyleSpan(Typeface.ITALIC) }, has = { s -> hasStyle(s, Typeface.ITALIC) }) }
-        t("btnUnderline").setOnClickListener { toggleSpan(::UnderlineSpan, selectionFlags(), create = { UnderlineSpan() }, has = { s -> s.any { it is UnderlineSpan } }) }
-        t("btnStrike").setOnClickListener { toggleSpan(::StrikethroughSpan, selectionFlags(), create = { StrikethroughSpan() }, has = { s -> s.any { it is StrikethroughSpan } }) }
+        t("btnUnderline").setOnClickListener { toggleSpan(selectionFlags(), create = { UnderlineSpan() }, has = { s -> s.any { it is UnderlineSpan } }) }
+        t("btnStrike").setOnClickListener { toggleSpan(selectionFlags(), create = { StrikethroughSpan() }, has = { s -> s.any { it is StrikethroughSpan } }) }
         t("btnTextColor").setOnClickListener { pickColor("Text Color") { c ->
             applyToSelection { start, end -> editText.text.setSpan(ForegroundColorSpan(c), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
         } }
