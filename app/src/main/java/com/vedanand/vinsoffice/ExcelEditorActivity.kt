@@ -93,7 +93,7 @@ class ExcelEditorActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnBold).setOnClickListener { toggleFontStyle { it.bold = !it.bold } }
         findViewById<Button>(R.id.btnItalic).setOnClickListener { toggleFontStyle { it.italic = !it.italic } }
         findViewById<Button>(R.id.btnUnderline).setOnClickListener { toggleFontStyle {
-            it.underline = if (it.underline == Font.U_SINGLE) Font.U_NONE else Font.U_SINGLE
+            it.underline = (if (it.underline.toInt() == Font.U_SINGLE) Font.U_NONE else Font.U_SINGLE).toShort()
         } }
         findViewById<Button>(R.id.btnFontPlus).setOnClickListener { changeFontSize(2) }
         findViewById<Button>(R.id.btnFontMinus).setOnClickListener { changeFontSize(-2) }
@@ -113,8 +113,14 @@ class ExcelEditorActivity : AppCompatActivity() {
         val wb = workbook ?: return
         val cell = getCell(selRow, selCol)
         val oldStyle = cell.cellStyle
+        val oldFont = wb.getFontAt(oldStyle.fontIndexAsInt)
         val newFont = wb.createFont()
-        newFont.cloneStyleFrom(wb.getFontAt(oldStyle.fontIndexAsInt))
+        newFont.bold = oldFont.bold
+        newFont.italic = oldFont.italic
+        newFont.underline = oldFont.underline.toShort()
+        newFont.fontHeightInPoints = oldFont.fontHeightInPoints
+        newFont.fontName = oldFont.fontName
+        newFont.color = oldFont.color
         val newStyle = wb.createCellStyle()
         newStyle.cloneStyleFrom(oldStyle)
         modify(Pair(newFont, newStyle))
