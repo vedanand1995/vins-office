@@ -1,11 +1,11 @@
 #!/bin/sh
 # Bootstrap gradlew — needs no gradle-wrapper.jar.
-# Downloads the Gradle distribution from gradle-wrapper.properties and runs it.
 set -e
 APP_HOME=$(cd "$(dirname "$0")" && pwd -P)
 PROPS="$APP_HOME/gradle/wrapper/gradle-wrapper.properties"
 
-DIST_URL=$(grep "^distributionUrl" "$PROPS" | sed "s/^distributionUrl=//; s/\\://")
+# Read distributionUrl and strip the escape backslashes (https\:// -> https://)
+DIST_URL=$(grep "^distributionUrl" "$PROPS" | cut -d= -f2- | tr -d "\\")
 
 CACHE_DIR="$HOME/.gradle-bootstrap"
 DIST_NAME=$(basename "$DIST_URL")
