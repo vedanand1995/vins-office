@@ -401,20 +401,69 @@ class ExcelEditorActivity : AppCompatActivity() {
             if (font.bold) t = t or Typeface.BOLD
             if (font.italic) t = t or Typeface.ITALIC
             et.setTypeface(null, t)
+            et.setTextColor(fontColorArgb(font))
             et.textSize = baseTextSize * (font.fontHeightInPoints / 11f)
             if (style.alignment == HorizontalAlignment.CENTER) et.gravity = Gravity.CENTER
             else if (style.alignment == HorizontalAlignment.RIGHT) et.gravity = Gravity.END
             else et.gravity = Gravity.START or Gravity.CENTER_VERTICAL
-            val fill = if (style.fillPattern == FillPatternType.SOLID_FOREGROUND)
-                poiColorToArgb(style.fillForegroundColor) else Color.WHITE
-            et.background = borderedBg(fill)
+
+            // Fill color (XSSF RGB preferred, indexed fallback)
+            var fill = Color.WHITE
+            if (style.fillPattern == FillPatternType.SOLID_FOREGROUND) {
+                fill = xssfRgb(style.fillForegroundColorColor)
+                    ?: indexedToArgb(style.fillForegroundColor)
+            }
+
+            // Border: file me border ho to dark stroke, warna halka gridline
+            val hasBorder = style.borderTop != org.apache.poi.ss.usermodel.BorderStyle.NONE ||
+                style.borderBottom != org.apache.poi.ss.usermodel.BorderStyle.NONE ||
+                style.borderLeft != org.apache.poi.ss.usermodel.BorderStyle.NONE ||
+                style.borderRight != org.apache.poi.ss.usermodel.BorderStyle.NONE
+            val borderColor = if (hasBorder) {
+                xssfRgb(style.topForegroundColorColor) ?: Color.parseColor("#555555")
+            } else Color.parseColor("#C9C9C9")
+            val strokeW = if (hasBorder) 2 else 1
+
+            et.background = GradientDrawable().apply {
+                setColor(fill)
+                setStroke(px(strokeW), borderColor)
+            }
         } catch (_: Exception) {}
     }
 
-    private fun poiColorToArgb(poi: Short): Int {
-        val rgb = poi.toInt() and 0xFFFFFF
-        return if (rgb == 0) Color.WHITE else (0xFF000000.toInt() or rgb)
+    /** XSSFColor -> ARGB int, null agar available nahi */
+    private fun xssfRgb(color: Any?): Int? = try {
+        val c = color as? org.apache.poi.xssf.usermodel.XSSFColor ?: return null
+        val rgb = c.rgbWithAlpha ?: c.rgb ?: return null
+        if (rgb.size >= 3)
+            (0xFF shl 24) or (rgb[0].toInt() and 0xFF shl 16) or (rgb[1].toInt() and 0xFF shl 8) or (rgb[2].toInt() and 0xFF)
+        else null
+    } catch (_: Exception) { null }
+
+    /** POI indexed color -> ARGB (common palette) */
+    private fun indexedToArgb(idx: Short): Int {
+        val i = idx.toInt()
+        val palette = mapOf(
+            0 to 0xFF000000.toInt(), 1 to 0xFFFFFFFF.toInt(), 2 to 0xFFFF0000.toInt(),
+            3 to 0xFF00FF00.toInt(), 4 to 0xFF0000FF.toInt(), 5 to 0xFFFFFF00.toInt(),
+            6 to 0xFFFF00FF.toInt(), 7 to 0xFF00FFFF.toInt(), 8 to 0xFF000000.toInt(),
+            9 to 0xFFFFFFFF.toInt(), 10 to 0xFFFF0000.toInt(), 11 to 0xFF00FF00.toInt(),
+            12 to 0xFF0000FF.toInt(), 13 to 0xFFFFFF00.toInt(), 14 to 0xFFFF00FF.toInt(),
+            15 to 0xFF00FFFF.toInt(), 16 to 0xFF800000.toInt(), 17 to 0xFF008000.toInt(),
+            18 to 0xFF000080.toInt(), 19 to 0xFF808000.toInt(), 20 to 0xFF800080.toInt(),
+            21 to 0xFF008080.toInt(), 22 to 0xFFC0C0C0.toInt(), 23 to 0xFF808080.toInt(),
+            24 to 0xFF9999FF.toInt(), 40 to 0xFFCCFFFF.toInt(), 41 to 0xFFCCFFCC.toInt(),
+            42 to 0xFFFFFF99.toInt(), 43 to 0xFFFFCC99.toInt(), 44 to 0xFFCC99FF.toInt(),
+            45 to 0xFFFF99CC.toInt(), 46 to 0xFF99CCFF.toInt(), 47 to 0xFFFFCCFF.toInt()
+        )
+        return palette[i] ?: (0xFF000000.toInt() or ((i * 7919) and 0xFFFFFF))
     }
+
+    /** Font color: XSSF RGB first, indexed fallback */
+    private fun fontColorArgb(font: Font): Int = try {
+        xssfRgb((font as? org.apache.poi.xssf.usermodel.XSSFFont)?.xssfColor)
+            ?: indexedToArgb(font.color)
+    } catch (_: Exception) { Color.BLACK }
 
     private fun refreshCellView(r: Int, c: Int) {
         val et = cellViews["${r},${c}"] ?: return
