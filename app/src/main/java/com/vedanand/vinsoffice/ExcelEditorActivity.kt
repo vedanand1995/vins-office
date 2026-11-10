@@ -433,7 +433,9 @@ class ExcelEditorActivity : AppCompatActivity() {
             var t = 0
             if (font.bold) t = t or Typeface.BOLD
             if (font.italic) t = t or Typeface.ITALIC
-            et.setTypeface(null, t)
+            // Custom font render (Shruti, LMG Arun, Mangal, etc.)
+            val customTf = FontManager.load(this, font.fontName)
+            et.setTypeface(customTf, t)
             et.setTextColor(fontColorArgb(font))
             et.textSize = baseTextSize * (font.fontHeightInPoints / 11f)
             if (style.alignment == HorizontalAlignment.CENTER) et.gravity = Gravity.CENTER
@@ -462,7 +464,7 @@ class ExcelEditorActivity : AppCompatActivity() {
 
     private fun xssfRgb(color: Any?): Int? = try {
         val c = color as? org.apache.poi.xssf.usermodel.XSSFColor ?: return null
-        val rgb = c.rgbWithAlpha ?: c.rgb ?: return null
+        val rgb = c.rgb ?: return null
         if (rgb.size >= 3)
             (0xFF shl 24) or (rgb[0].toInt() and 0xFF shl 16) or (rgb[1].toInt() and 0xFF shl 8) or (rgb[2].toInt() and 0xFF)
         else null

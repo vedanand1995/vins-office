@@ -84,12 +84,40 @@ class WordEditorActivity : AppCompatActivity() {
         fontSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p: android.widget.AdapterView<*>, v: android.view.View?, pos: Int, id: Long) {
                 val name = fonts.getOrNull(pos) ?: return
-                val tf = FontManager.load(this@WordEditorActivity, name) ?: Typeface.DEFAULT
-                editText.typeface = tf
+                val tf = FontManager.load(this@WordEditorActivity, name)
+                applyFontToSelection(name, tf)
             }
             override fun onNothingSelected(p: android.widget.AdapterView<*>) {}
         }
     }
+
+    /** Selection (ya pura text agar kuch select nahi) pe font lagao */
+    private fun applyFontToSelection(name: String, tf: Typeface?) {
+        val text = editText.text
+        val s = editText.selectionStart.coerceAtLeast(0)
+        val e = editText.selectionEnd.coerceAtLeast(0)
+        if (s == e) {
+            editText.typeface = tf ?: Typeface.DEFAULT
+            return
+        }
+        val start = minOf(s, e); val end = maxOf(s, e)
+        text.getSpans(start, end, CustomTypefaceSpan::class.java).forEach { span ->
+            text.removeSpan(span)
+        }
+        text.setSpan(CustomTypefaceSpan(name, tf ?: Typeface.DEFAULT), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
+
+    /** Position pe active font family nikalo */
+    private fun fontFamilyAt(text: Editable, pos: Int): String? {
+        val spans = text.getSpans(pos, (pos + 1).coerceAtMost(text.length), CustomTypefaceSpan::class.java)
+        return spans.lastOrNull()?.family
+    }
+
+    private data class RunInfo(
+        val start: Int, val end: Int,
+        val bold: Boolean, val italic: Boolean, val underline: Boolean, val strike: Boolean,
+        val color: String?, val size: Int?, val family: String?
+    )
 
     // ---------- Toolbar ----------
 
@@ -107,8 +135,8 @@ class WordEditorActivity : AppCompatActivity() {
         t("btnSizeUp").setOnClickListener { changeSize(2) }
         t("btnSizeDown").setOnClickListener { changeSize(-2) }
 
-        t("btnBold").setOnClickListener { toggleSpan(::StyleSpan, selectionFlags(), create = { StyleSpan(Typeface.BOLD) }, has = { s -> hasStyle(s, Typeface.BOLD) }) }
-        t("btnItalic").setOnClickListener { toggleSpan(::StyleSpan, selectionFlags(), create = { StyleSpan(Typeface.ITALIC) }, has = { s -> hasStyle(s, Typeface.ITALIC) }) }
+        t("btnBold").setOnClickListener { toggleSpan(selectionFlags(), create = { StyleSpan(Typeface.BOLD) }, has = { s -> hasStyle(s, Typeface.BOLD) }) }
+        t("btnItalic").setOnClickListener { toggleSpan(selectionFlags(), create = { StyleSpan(Typeface.ITALIC) }, has = { s -> hasStyle(s, Typeface.ITALIC) }) }
         t("btnUnderline").setOnClickListener { toggleSpan(::UnderlineSpan, selectionFlags(), create = { UnderlineSpan() }, has = { s -> s.any { it is UnderlineSpan } }) }
         t("btnStrike").setOnClickListener { toggleSpan(::StrikethroughSpan, selectionFlags(), create = { StrikethroughSpan() }, has = { s -> s.any { it is StrikethroughSpan } }) }
         t("btnTextColor").setOnClickListener { pickColor("Text Color") { c ->
@@ -129,7 +157,6 @@ class WordEditorActivity : AppCompatActivity() {
         spans.any { it is StyleSpan && (it.style and flag) != 0 }
 
     private fun toggleSpan(
-        ctor: () -> Unit,
         flags: Int,
         create: () -> CharacterStyle,
         has: (Array<CharacterStyle>) -> Boolean
@@ -171,7 +198,7 @@ class WordEditorActivity : AppCompatActivity() {
         currentSize = (currentSize + delta).coerceIn(8, 72)
         sizeLabel.text = "$currentSize"
         applyToSelection { s, e ->
-            editText.text.setSpan(android.text.style.RelativeSizeSpan(currentSize / 11f), s, e, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            editText.text.setSpan(android.text.style.AbsoluteSizeSpan(currentSize, true), s, e, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
     }
 
@@ -188,10 +215,8 @@ class WordEditorActivity : AppCompatActivity() {
         val text = editText.text
         // Current paragraph ke start/end dhoondo
         val sel = editText.selectionStart.coerceAtLeast(0)
-        var start = text.indexOf('
-', sel)
-        var paraStart = if (sel > 0) text.lastIndexOf('
-', sel - 1).coerceAtLeast(-1) + 1 else 0
+        var start = text.indexOf('\n', sel)
+        var paraStart = if (sel > 0) text.lastIndexOf('\n', sel - 1).coerceAtLeast(-1) + 1 else 0
         var paraEnd = if (start == -1) text.length else start
         text.setSpan(AlignmentSpan.Standard(alignment), paraStart, paraEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
     }
@@ -201,9 +226,27 @@ class WordEditorActivity : AppCompatActivity() {
     private fun loadDocx(file: File) = CoroutineScope(Dispatchers.IO).launch {
         try {
             val sb = StringBuilder()
+            val runs = mutableListOf<RunInfo>()
             val doc = XWPFDocument(file.inputStream())
             doc.paragraphs.forEach { p ->
-                sb.append(p.text).append("\n")
+                p.runs.forEach { run ->
+                    val txt = run.text() ?: ""
+                    if (txt.isNotEmpty()) {
+                        val start = sb.length
+                        sb.append(txt)
+                        runs.add(RunInfo(
+                            start, sb.length,
+                            bold = run.isBold,
+                            italic = run.isItalic,
+                            underline = run.underline != org.apache.poi.xwpf.usermodel.UnderlinePatterns.NONE,
+                            strike = run.isStrikeThrough,
+                            color = run.color,
+                            size = run.fontSize.takeIf { it > 0 },
+                            family = run.fontFamily
+                        ))
+                    }
+                }
+                sb.append('\n')
             }
             doc.tables.forEach { table ->
                 table.rows.forEach { row ->
@@ -213,6 +256,34 @@ class WordEditorActivity : AppCompatActivity() {
             doc.close()
             withContext(Dispatchers.Main) {
                 editText.setText(sb.toString())
+                // Runs ko spans me convert — fonts + formatting render honge
+                val text = editText.text
+                for (r in runs) {
+                    if (r.start >= text.length) continue
+                    val end = r.end.coerceAtMost(text.length)
+                    var flags = 0
+                    if (r.bold) flags = flags or Typeface.BOLD
+                    if (r.italic) flags = flags or Typeface.ITALIC
+                    if (flags != 0) text.setSpan(StyleSpan(flags), r.start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    if (r.underline) text.setSpan(UnderlineSpan(), r.start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    if (r.strike) text.setSpan(StrikethroughSpan(), r.start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    r.color?.let { c ->
+                        runCatching { Color.parseColor(if (c.length == 6) "#$c" else c) }.getOrNull()?.let {
+                            text.setSpan(ForegroundColorSpan(it), r.start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        }
+                    }
+                    r.size?.let { sz ->
+                        text.setSpan(android.text.style.AbsoluteSizeSpan(sz, true), r.start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    }
+                    // Custom font render (Shruti, LMG Arun, Mangal, etc.)
+                    r.family?.let { fam ->
+                        if (fam.isNotBlank()) {
+                            FontManager.load(this@WordEditorActivity, fam)?.let { tf ->
+                                text.setSpan(CustomTypefaceSpan(fam, tf), r.start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                            }
+                        }
+                    }
+                }
                 saveStatus.text = "Loaded"
             }
         } catch (t: Throwable) {
@@ -257,10 +328,14 @@ class WordEditorActivity : AppCompatActivity() {
                         val (bold, italic, underline, strike, color, size) = fmt
                         run.isBold = bold
                         run.isItalic = italic
-                        if (underline) run.isUnderline = org.apache.poi.xwpf.usermodel.UnderlinePatterns.SINGLE
+                        if (underline) run.underline = org.apache.poi.xwpf.usermodel.UnderlinePatterns.SINGLE
                         if (strike) run.isStrikeThrough = true
                         if (color != null) run.color = rgbHex(color)
                         run.fontSize = size
+                        // Font family save karo (custom fonts bhi)
+                        fontFamilyAt(text, offset + segStart)?.let { fam ->
+                            if (fam.isNotBlank()) run.setFontFamily(fam)
+                        }
                         segStart = segEnd
                     }
                     offset += line.length + 1
@@ -303,12 +378,19 @@ class WordEditorActivity : AppCompatActivity() {
         for (span in text.getSpans(pos, pos + 1, android.text.style.AbsoluteSizeSpan::class.java)) {
             size = span.size
         }
-        for (span in text.getSpans(pos, pos + 1, android.text.style.RelativeSizeSpan::class.java)) {
-            size = (11 * span.sizeChange).toInt().coerceIn(8, 72)
-        }
         return Fmt(bold, italic, underline, strike, color, size)
     }
 
     private fun rgbHex(color: Int): String =
         String.format("%02X%02X%02X", (color shr 16) and 0xFF, (color shr 8) and 0xFF, color and 0xFF)
+}
+
+/**
+ * Typeface span — custom fonts (Shruti, LMG Arun, Mangal) ko text range pe
+ * render karne ke liye. Family name store karta hai taaki docx me save ho.
+ */
+class CustomTypefaceSpan(val family: String, private val typeface: Typeface) : CharacterStyle() {
+    override fun updateDrawState(tp: android.text.TextPaint) {
+        tp.typeface = typeface
+    }
 }
